@@ -7,6 +7,9 @@ const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1461386934260732110/gx
 export function registerRoutes(app) {
     // Receive help beacon and forward to Discord
     app.post("/help", async (req, res) => {
+        console.log("=== HELP ENDPOINT HIT ===");
+        console.log("Request body:", JSON.stringify(req.body));
+        
         const {
             player,
             server,
@@ -15,15 +18,18 @@ export function registerRoutes(app) {
         } = req.body;
 
         if (!player || !server || x === undefined || y === undefined || z === undefined) {
+            console.log("ERROR: Missing fields");
             return res.status(400).json({ error: "Missing required fields: player, server, x, y, z" });
         }
 
         // Store beacon for other clients to poll
         addBeacon({ player, server, x, y, z, enemies: enemies || [] });
-        console.log(`Beacon added: ${player} at (${x}, ${y}, ${z}) on ${server}`);
+        console.log(`✅ Beacon stored: ${player} at (${x}, ${y}, ${z}) on ${server}`);
         
         // Forward to Discord webhook
         try {
+            console.log("Attempting to send Discord webhook...");
+            
             const enemyList = enemies && enemies.length > 0 
                 ? enemies.join(", ") 
                 : "None nearby";
@@ -36,15 +42,21 @@ export function registerRoutes(app) {
                         `**Enemies:** ${enemyList}`
             };
 
-            await fetch(DISCORD_WEBHOOK, {
+            const webhookResponse = await fetch(DISCORD_WEBHOOK, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(discordMessage)
             });
 
-            console.log(`Discord webhook sent for ${player}`);
+            console.log(`Discord webhook response: ${webhookResponse.status}`);
+            
+            if (!webhookResponse.ok) {
+                console.error(`Discord webhook failed with status: ${webhookResponse.status}`);
+            } else {
+                console.log(`✅ Discord webhook sent successfully for ${player}`);
+            }
         } catch (error) {
-            console.error("Failed to send Discord webhook:", error);
+            console.error("❌ Failed to send Discord webhook:", error);
             // Don't fail the request if Discord fails
         }
         
