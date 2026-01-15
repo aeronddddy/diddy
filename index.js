@@ -5,18 +5,18 @@ import { registerRoutes } from "./routes.js";
 const app = express();
 app.use(express.json());
 
-// Public health check endpoint - NO AUTH REQUIRED
-app.get("/health", (req, res) => {
-    res.status(200).json({ status: "alive", timestamp: Date.now() });
+// Public health check endpoint for cron jobs
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
 
-app.get("/ping", (req, res) => {
-    res.status(200).send("pong");
+app.get('/ping', (req, res) => {
+    res.send('pong');
 });
 
-// Register all other routes (these can have auth or not, your choice)
+// Register all routes - no auth needed
 registerRoutes(app);
 
 app.listen(PORT, () => {
-    console.log(`Bot running on port ${PORT}`);
+    console.log(`Discord Alert Bot running on port ${PORT}`);
 });
